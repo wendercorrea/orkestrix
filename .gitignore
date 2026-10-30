@@ -11,3 +11,4 @@ logs/
 # empacotador local (gera a tag e o zip): ferramenta de quem publica, não faz parte da distribuição
 release/empacotar-dist.sh
 orkestrix-system/orkestrix-app.jar
+/.idea
