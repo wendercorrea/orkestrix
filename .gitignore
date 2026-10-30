@@ -1,0 +1,13 @@
+# segredos e dados de cada instalação: nunca versionar
+.env
+backups/
+data/*
+!data/postgres-init.sql
+logs/
+*.log
+# zips de download gerados pelo empacotador (release/empacotar-dist.sh). A barra inicial é obrigatória: sem ela o padrão
+# também ignoraria orkestrix-frontend/dist/, o front compilado
+/dist/
+# empacotador local (gera a tag e o zip): ferramenta de quem publica, não faz parte da distribuição
+release/empacotar-dist.sh
+orkestrix-system/orkestrix-app.jar

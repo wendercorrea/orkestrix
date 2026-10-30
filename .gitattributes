@@ -1,2 +1,8 @@
-# Auto detect text files and perform LF normalization
 * text=auto
+# scripts sempre com LF (rodam no Linux e no Git Bash); binários nunca convertidos
+*.sh   text eol=lf
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+*.jar  binary
+*.png  binary
+*.ico  binary
