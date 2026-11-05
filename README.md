@@ -6,6 +6,8 @@ As imagens ficam num repositório único, com o componente na tag: `backend-4.1.
 
 O que mudou em cada versão está em [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
+Endereços, login, API Gateway (Swagger e chaves) e problemas comuns: [ACESSO.md](ACESSO.md).
+
 ## Subir
 
 ```bash
