@@ -1,0 +1,69 @@
+# Orkestrix a partir do Docker Hub: baixa as imagens prontas e sobe tudo, sem compilar nada.
+#
+#   1. cp .env.example .env                    (edite os 4 segredos)
+#   2. docker compose up -d                    (o repositório é público: não precisa de docker login)
+#   3. abra http://localhost:8080              (usuário admin; senha = ADMIN_PASSWORD do .env)
+#
+# Imagens: wendercorrea/orkestrix:<componente>-<versão>  (backend-, frontend-, gateway-)
+# Mudar de versão: ORKESTRIX_VERSION no .env e «docker compose pull && docker compose up -d».
+name: orkestrix
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-orkestrix}
+      POSTGRES_USER: ${POSTGRES_USER:-orkestrix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    networks: [orkestrix]
+    restart: unless-stopped
+
+  # O nome do serviço precisa continuar «orkestrix-backend»: o nginx do front resolve esse nome.
+  orkestrix-backend:
+    image: wendercorrea/orkestrix:backend-${ORKESTRIX_VERSION:-4.1.3}
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-orkestrix}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-orkestrix}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update          # cria as tabelas na primeira subida
+      ORKESTRIX_JWT_SECRET: ${ORKESTRIX_JWT_SECRET:?Defina ORKESTRIX_JWT_SECRET (32+ caracteres) no arquivo .env}
+      ORKESTRIX_BOOTSTRAP_ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD no arquivo .env}
+      ORKX_SECRETS_KEY: ${ORKX_SECRETS_KEY:?Defina ORKX_SECRETS_KEY no arquivo .env}
+      SERVER_PORT: 9000
+      ORKESTRIX_CONNECTORS_FILE_BASE_DIR: /app/shared
+    volumes:
+      - ./files:/app/shared                          # pasta que os conectores de planilha e arquivo enxergam
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks: [orkestrix]
+    restart: unless-stopped
+
+  frontend:
+    image: wendercorrea/orkestrix:frontend-${ORKESTRIX_VERSION:-4.1.3}
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    depends_on:
+      - orkestrix-backend
+    networks: [orkestrix]
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  orkestrix:
