@@ -2,7 +2,7 @@
 
 Este compose **baixa** as imagens prontas de [`wendercorrea/orkestrix`](https://hub.docker.com/repository/docker/wendercorrea/orkestrix) e sobe PostgreSQL, backend e front. Não compila nada.
 
-As imagens ficam num repositório único, com o componente na tag: `backend-4.1.3`, `frontend-4.1.3` e `gateway-4.1.3`.
+As imagens ficam num repositório único, com o componente na tag: `backend-4.1.5`, `frontend-4.1.5` e `gateway-4.1.5`.
 
 O que mudou em cada versão está em [RELEASE-NOTES.md](RELEASE-NOTES.md).
 
