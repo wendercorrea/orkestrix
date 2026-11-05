@@ -1,0 +1,7 @@
+# Catálogo inicial do API Gateway. Com ORKX_GW_CATALOG_STORE=database (o padrão deste compose), as APIs e os consumidores
+# passam a morar no banco e se gerenciam pelo designer («Publicar no API Gateway») ou pela Management API; este arquivo só é
+# importado uma vez. Pode ficar vazio.
+orkx:
+  gateway:
+    apis: []
+    consumers: []
