@@ -3,6 +3,7 @@
 #   1. cp .env.example .env                    (edite os 4 segredos)
 #   2. docker compose up -d                    (o repositório é público: não precisa de docker login)
 #   3. abra http://localhost:8080              (usuário admin; senha = ADMIN_PASSWORD do .env)
+#   API Gateway: http://localhost:8090/api/v1/docs  (Swagger); publicar APIs pelo designer: botão «Publicar no API Gateway»
 #
 # Imagens: wendercorrea/orkestrix:<componente>-<versão>  (backend-, frontend-, gateway-)
 # Mudar de versão: ORKESTRIX_VERSION no .env e «docker compose pull && docker compose up -d».
@@ -17,6 +18,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_BIND:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -27,7 +30,7 @@ services:
 
   # O nome do serviço precisa continuar «orkestrix-backend»: o nginx do front resolve esse nome.
   orkestrix-backend:
-    image: wendercorrea/orkestrix:backend-${ORKESTRIX_VERSION:-4.1.3}
+    image: wendercorrea/orkestrix:backend-${ORKESTRIX_VERSION:-4.1.5}
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-orkestrix}
@@ -37,6 +40,10 @@ services:
       ORKESTRIX_JWT_SECRET: ${ORKESTRIX_JWT_SECRET:?Defina ORKESTRIX_JWT_SECRET (32+ caracteres) no arquivo .env}
       ORKESTRIX_BOOTSTRAP_ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD no arquivo .env}
       ORKX_SECRETS_KEY: ${ORKX_SECRETS_KEY:?Defina ORKX_SECRETS_KEY no arquivo .env}
+      # «Publicar no API Gateway» no designer: o backend chama a Management API do gateway (porta 8081, só na rede interna)
+      ORKX_GW_MANAGEMENT_URL: http://orkestrix-gateway:8081
+      ORKX_GW_MANAGEMENT_TOKEN: ${ORKX_GW_MANAGEMENT_TOKEN:?Defina ORKX_GW_MANAGEMENT_TOKEN (32+ caracteres) no arquivo .env}
+      ORKX_GW_PUBLIC_URL: ${ORKX_GW_PUBLIC_URL:-}     # endereço público do gateway, só para o exemplo curl do designer
       SERVER_PORT: 9000
       ORKESTRIX_CONNECTORS_FILE_BASE_DIR: /app/shared
     volumes:
@@ -54,13 +61,43 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: wendercorrea/orkestrix:frontend-${ORKESTRIX_VERSION:-4.1.3}
+    image: wendercorrea/orkestrix:frontend-${ORKESTRIX_VERSION:-4.1.5}
     ports:
       - "${HTTP_PORT:-8080}:80"
     depends_on:
       - orkestrix-backend
     networks: [orkestrix]
     restart: unless-stopped
+
+  # API Gateway: porta de entrada externa para iniciar processos por HTTP, com chave de API e Swagger (em /api/v1/docs).
+  # Catálogo em banco (schema orkx_gateway) e contrato interno, que é o que o «Publicar no API Gateway» do designer usa.
+  orkestrix-gateway:
+    image: wendercorrea/orkestrix:gateway-${ORKESTRIX_VERSION:-4.1.5}
+    environment:
+      ORKX_GW_BACKEND_URL: http://orkestrix-backend:9000
+      # usuário com o qual o gateway chama o Orkestrix (padrão: o admin, com a senha do .env)
+      ORKX_GW_SERVICE_USER: ${ORKX_GW_SERVICE_USER:-admin}
+      ORKX_GW_SERVICE_PASSWORD: ${ORKX_GW_SERVICE_PASSWORD:-${ADMIN_PASSWORD}}
+      ORKX_GW_API_KEY_PEPPER: ${ORKX_GW_API_KEY_PEPPER:?Defina ORKX_GW_API_KEY_PEPPER (32+ caracteres) no arquivo .env}
+      ORKX_GW_ENGINE_API: internal
+      ORKX_GW_CATALOG_STORE: database
+      ORKX_GW_DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-orkestrix}
+      ORKX_GW_DATABASE_USER: ${POSTGRES_USER:-orkestrix}
+      ORKX_GW_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      ORKX_GW_MANAGEMENT_TOKEN: ${ORKX_GW_MANAGEMENT_TOKEN:?Defina ORKX_GW_MANAGEMENT_TOKEN (32+ caracteres) no arquivo .env}
+      ORKX_GW_PUBLIC_URL: ${ORKX_GW_PUBLIC_URL:-}
+      SPRING_CONFIG_ADDITIONAL_LOCATION: file:/app/config/catalogo.yml
+    volumes:
+      - ./gateway/catalogo.yml:/app/config/catalogo.yml:ro
+    ports:
+      - "${GATEWAY_PORT:-8090}:8080"                 # a 8081 (gestão) não é publicada
+    depends_on:
+      orkestrix-backend:
+        condition: service_healthy
+    networks: [orkestrix]
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
 
 volumes:
   postgres_data:

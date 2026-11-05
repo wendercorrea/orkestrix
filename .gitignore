@@ -12,3 +12,6 @@ logs/
 release/empacotar-dist.sh
 orkestrix-system/orkestrix-app.jar
 /.idea
+
+# source maps: trazem o código-fonte do front
+*.map

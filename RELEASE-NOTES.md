@@ -1,4 +1,22 @@
-# Orkestrix 4.1.3: notas da versão
+# Orkestrix 4.1.5: notas da versão
+
+Data: 05/11/2026. **Só o front muda**, e só no que ele entrega ao navegador: o motor, o gateway e o banco são os mesmos e **não há migração nova**.
+
+- **A imagem do front deixa de trazer o código-fonte.** Até a 4.1.4, o front compilado vinha com 17 arquivos `.map` (source maps), que embutem o código TypeScript original (94 arquivos de `src/`). Agora o build não gera `.map`, e a geração da versão **recusa** uma imagem do front que tenha algum. Nada muda no uso: o `.map` só era baixado com as ferramentas de desenvolvedor abertas, e as mensagens de erro no console passam a apontar para o arquivo minificado. **Atenção:** as imagens `frontend-4.1.2`, `frontend-4.1.3` e `frontend-4.1.4` publicadas no Docker Hub têm os `.map`; use a 4.1.5.
+- **Menu «Novo» do editor** (vindo da 4.1.4): saem os cinco exemplos de IA e entram seis exemplos que rodam no motor, descritos nas notas abaixo.
+
+---
+
+## Versão anterior: 4.1.4
+
+Data: 05/11/2026. **Só o front muda**: o motor, o gateway e o banco são os mesmos da 4.1.3 e **não há migração nova**.
+
+- **Menu «Novo» do editor com outros exemplos.** Saem os cinco exemplos de IA (chat com o Claude, chat com o ChatGPT, ChatGPT gera pergunta e grava na tabela, Gemini gera pergunta e grava na tabela, pergunta básica ao Gemini). Entram seis exemplos que rodam no motor e passam no validador do designer: **classificar pedido** (decide por regra, sem nada externo: bom para o primeiro teste), **consulta de cliente com tratamento de falha** (REST com segredo `cadastro`), **análise de crédito com espera e decisão** (regra de risco, análise manual com prazo, espera de documentos e timers), **carga de vendas a partir de planilha**, **processar cada item do pedido** (laço sobre uma coleção) e **pedido com aprovação e nova tentativa**. O «Diagrama em branco», o exemplo de chamada REST e os assistentes «Processo que lê uma planilha…» e «Processo que gera um arquivo…» continuam. **Atenção:** quem usava os exemplos de IA do menu para começar um fluxo deixa de os ter lá; fluxos já criados não mudam.
+- **Sem mudança para quem instala.** As imagens do Docker Hub (`wendercorrea/orkestrix:backend-4.1.4`, `frontend-` e `gateway-`) e o `upgrade.sh --pull` seguem como na 4.1.3.
+
+---
+
+## Versão anterior: 4.1.3
 
 Data: 05/11/2026. **Sem mudança no motor, no banco nem no gateway** em relação à 4.1.2: o código que roda é o mesmo e **não há migração nova**. A novidade é a forma de receber as imagens.
 
