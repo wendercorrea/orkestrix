@@ -15,6 +15,8 @@ docker compose up -d               # baixa as imagens; o repositório é públic
 
 Abra http://localhost:8080. Usuário `admin`, senha igual a `ADMIN_PASSWORD` do `.env`.
 
+Banco de dados (opcional, para DBeaver, psql etc.): `localhost`, porta `5432` (ou a do `POSTGRES_PORT`), banco `orkestrix`, usuário `orkestrix`, senha igual a `POSTGRES_PASSWORD` do `.env`.
+
 ## Conferir
 
 ```bash
@@ -43,4 +45,4 @@ docker compose down -v             # apaga também o banco (volume postgres_data
 
 - Só PostgreSQL, backend e front. Para o **API Gateway** (início de processos por HTTP com chave de API), use o pacote completo de release, que traz o `docker-compose.yml` com o gateway, o `catalogo.yml` e os scripts de atualização, backup e retorno de versão.
 - Sem HTTPS: para expor na internet, ponha um proxy na frente (nginx, Caddy ou Traefik).
-- A porta do PostgreSQL não é publicada; só o front (8080) é.
+- O front fica na porta 8080 (`HTTP_PORT`). O PostgreSQL fica na porta **5432** do seu computador (`POSTGRES_PORT`), acessível só por ele (`POSTGRES_BIND=127.0.0.1`); mude a porta no `.env` se a 5432 já estiver em uso, e use `POSTGRES_BIND=0.0.0.0` só se quiser abrir o banco para a rede.
