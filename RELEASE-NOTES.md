@@ -1,3 +1,30 @@
+# Orkestrix 4.1.8: notas da versão
+
+Data: 06/11/2026. Completa o «Montar JSON» da 4.1.7. Mudam o **motor** (um recurso no modelo do JSON) e o **front**. O banco é o mesmo da 4.1.7: **não há migração nova**, e a 4.1.7 não chegou a ser publicada, então quem vem da 4.1.6 recebe tudo junto.
+
+- **«Montar JSON» lê os dados do nó anterior.** O diálogo ganhou o painel «Dados disponíveis», igual ao do «Mapear e transformar»: as variáveis dos nós anteriores com a amostra em árvore e o botão «Buscar amostra». Clicar num campo escreve o `${...}` dele no ponto do cursor. Uma lista entra inteira (`${linhas}`); um campo de um item entra como a lista desse campo (`${linhas[*].pedido}`); «Todos os campos» insere um objeto com os campos simples.
+- **`[*]` no modelo (motor).** `${linhas[*].pedido}` entrega a lista desse campo em todos os itens; item sem o campo vira `null`. Regra JSN-02 em `specs/08-componentes-de-dados.md`. Modelos da 4.1.7 continuam iguais.
+- **Modelo padrão corrigido.** O modelo de um «Montar JSON» novo usava `${linhas_count}`, variável que o motor não grava (o «Mapear e transformar» e o «Consultar banco» gravam `<id do nó>_count`). Agora o modelo já vem com as variáveis reais do nó anterior, e a prévia deduz a quantidade a partir da amostra. **Atenção:** um «Montar JSON» criado na 4.1.7 com o modelo padrão antigo falha na execução («a variável `linhas_count` não existe»); troque pela variável `<id>_count` do nó anterior, que aparece como botão no painel.
+- **«Mapear e transformar» guarda a amostra ao salvar.** Antes ela só era guardada se o nome da variável de saída já estivesse preenchido durante o cálculo; agora os próximos nós («Montar JSON», «Gravar no banco») sempre a mostram.
+- **Busca de componentes (Ctrl+K):** digitar logo depois de abrir não perde mais o foco (ele caía no botão «minimizar» do diálogo e o Enter minimizava em vez de adicionar).
+- **Cursor no modelo do JSON:** o campo clicado entra onde o cursor estava, e no fim do texto quando o cursor não foi colocado (antes entrava no começo).
+- **Sem mudança para quem instala.** As imagens do Docker Hub (`wendercorrea/orkestrix:backend-4.1.8`, `frontend-` e `gateway-`) e o `upgrade.sh --pull` seguem como na 4.1.3.
+
+---
+# Orkestrix 4.1.7: notas da versão
+
+Data: 06/11/2026. Mudam o **motor** (um componente novo), o **backend** (só o editor: uma rota de prévia) e o **front**. O banco é o mesmo da 4.1.6: **não há migração nova**. Quem não usa o componente novo só vê as mudanças da paleta do editor.
+
+- **Componente novo «Montar JSON».** Preenche um modelo JSON com `${variável}` e grava o documento numa variável, para ser a resposta do processo (`response.body` do gateway) ou a entrada do próximo nó. Fora de aspas o valor entra como JSON (a lista do «Mapear e transformar» ou do «Consultar banco» entra como lista, número como número, texto ganha aspas); dentro de aspas entra como texto, já escapado. O conteúdo de uma variável nunca quebra o JSON nem acrescenta campos. Aceita caminhos (`${linhas[0].id}`) e `${$now}`, `${$instanceId}`, `${$nodeId}`. Variável inexistente falha o nó e segue pelo fluxo `exception`, como nos outros componentes. Regras JSN-01 a JSN-09 em `specs/08-componentes-de-dados.md`.
+- **Aviso novo no deploy (PRF-32).** O validador avisa «Montar JSON» com modelo vazio, `${}` sem nome, modelo que não vira JSON válido ou variável de saída com nome inválido. É aviso, não erro: nenhum fluxo existente muda.
+- **Prévia no editor.** O diálogo do «Montar JSON» tem «Ver o JSON», que monta o documento no backend com o mesmo código da execução (`POST /api/designer/data/json/preview`, permissão `PROCESS_CREATE`) e não grava nada.
+- **Paleta com nomes.** Passar o mouse num ícone mostra o nome e o que o componente faz; um botão no topo da paleta («Mostrar ou esconder os nomes») escreve o nome ao lado de cada ícone e lembra a escolha. **Atenção:** os nomes das entradas ficaram curtos (por exemplo, «Tarefa de serviço (chamada REST)» passou a «Chamada REST»), a «Tarefa manual» ficou junto das tarefas, antes dos componentes de dados, e a paleta ganhou dois botões novos no topo (lupa e nomes). Os `data-action` das entradas não mudaram.
+- **Busca de componentes.** Pela lupa da paleta, pelo botão «Componente» da barra ou por **Ctrl+K**: busca pelo nome, pelo que o componente faz ou por palavras conhecidas («api», «excel», «sql», «json», «decisão»), sem diferenciar acento. Enter adiciona: com um passo selecionado, o novo entra logo depois e já ligado a ele; sem seleção, entra no centro da tela.
+- **Skill do gerador de BPMN** aceita `type: "json"` (`.claude/skills/orkestrix-bpmn`).
+- **Sem mudança para quem instala.** As imagens do Docker Hub (`wendercorrea/orkestrix:backend-4.1.7`, `frontend-` e `gateway-`) e o `upgrade.sh --pull` seguem como na 4.1.3.
+
+---
+
 # Orkestrix 4.1.6: notas da versão
 
 Data: 05/11/2026. Mudam o **gateway**, o **backend** (só a publicação pelo editor), o **front** e o **menu do servidor**. O banco é o mesmo da 4.1.5: **não há migração nova**. Quem não usa o API Gateway só vê as mudanças do editor.
