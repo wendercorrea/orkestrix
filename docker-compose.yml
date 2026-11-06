@@ -30,7 +30,7 @@ services:
 
   # O nome do serviço precisa continuar «orkestrix-backend»: o nginx do front resolve esse nome.
   orkestrix-backend:
-    image: wendercorrea/orkestrix:backend-${ORKESTRIX_VERSION:-4.1.5}
+    image: wendercorrea/orkestrix:backend-${ORKESTRIX_VERSION:-4.1.6}
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-orkestrix}
@@ -61,7 +61,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: wendercorrea/orkestrix:frontend-${ORKESTRIX_VERSION:-4.1.5}
+    image: wendercorrea/orkestrix:frontend-${ORKESTRIX_VERSION:-4.1.6}
     ports:
       - "${HTTP_PORT:-8080}:80"
     depends_on:
@@ -72,7 +72,7 @@ services:
   # API Gateway: porta de entrada externa para iniciar processos por HTTP, com chave de API e Swagger (em /api/v1/docs).
   # Catálogo em banco (schema orkx_gateway) e contrato interno, que é o que o «Publicar no API Gateway» do designer usa.
   orkestrix-gateway:
-    image: wendercorrea/orkestrix:gateway-${ORKESTRIX_VERSION:-4.1.5}
+    image: wendercorrea/orkestrix:gateway-${ORKESTRIX_VERSION:-4.1.6}
     environment:
       ORKX_GW_BACKEND_URL: http://orkestrix-backend:9000
       # usuário com o qual o gateway chama o Orkestrix (padrão: o admin, com a senha do .env)
@@ -86,6 +86,7 @@ services:
       ORKX_GW_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       ORKX_GW_MANAGEMENT_TOKEN: ${ORKX_GW_MANAGEMENT_TOKEN:?Defina ORKX_GW_MANAGEMENT_TOKEN (32+ caracteres) no arquivo .env}
       ORKX_GW_PUBLIC_URL: ${ORKX_GW_PUBLIC_URL:-}
+      ORKX_GW_MAX_RESULT_SIZE: ${ORKX_GW_MAX_RESULT_SIZE:-2MB}   # maior resposta do Orkestrix lida pelo gateway (response.body com muitas linhas)
       SPRING_CONFIG_ADDITIONAL_LOCATION: file:/app/config/catalogo.yml
     volumes:
       - ./gateway/catalogo.yml:/app/config/catalogo.yml:ro

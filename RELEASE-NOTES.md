@@ -1,4 +1,20 @@
-# Orkestrix 4.1.5: notas da versão
+# Orkestrix 4.1.6: notas da versão
+
+Data: 05/11/2026. Mudam o **gateway**, o **backend** (só a publicação pelo editor), o **front** e o **menu do servidor**. O banco é o mesmo da 4.1.5: **não há migração nova**. Quem não usa o API Gateway só vê as mudanças do editor.
+
+- **O gateway pode devolver o resultado do processo.** Uma API com `wait-for` e `response.body: <variável>` responde, no sucesso, com o valor dessa variável em JSON, sem envelope (o texto JSON gravado pelo motor vira lista ou objeto), e a instância vai nos cabeçalhos `X-Orkx-Instance-Id` e `X-Orkx-Instance-Status`. Variável ausente no fim do processo responde `502`; `202` (ainda rodando) e `422` seguem como antes, e a consulta pelo ID opaco devolve o resultado quando a instância conclui. Sem `response.body`, nada muda. Detalhes em `GATEWAY.md`.
+- **Limite da resposta do motor no gateway** (`ORKX_GW_MAX_RESULT_SIZE`, padrão `2MB`, de 256KB a 64MB). **Atenção:** uma resposta do motor maior que o limite passa a dar `502`, com a explicação no log, em vez dos `202`/`413` enganosos de antes. Aumente o limite se uma API devolve muitas linhas.
+- **Contrato com resposta.** O contrato em banco guarda o `body` (contratos sem ele continuam com o mesmo JSON e o mesmo hash). Na comparação de versões, ligar ou desligar o `body` é mudança **incompatível**; trocar a variável é compatível. Swagger e menu 13 (catálogo) mostram a resposta.
+- **Editor: seção «Resposta» no «Publicar no API Gateway»**: só confirmar o recebimento, devolver o resultado do processo ou a situação com variáveis. O diálogo sugere as variáveis que o diagrama grava antes do fim e reabre a resposta já publicada.
+- **Menu, opção 2 («Subir o sistema»):** pergunta se sobe o API Gateway também. Com «s», grava no `.env` só o que falta (profile, pepper e token da Management API aleatórios, nunca trocando um existente, e, se aceitar, catálogo em banco e contrato interno) e, ao fim, confere se a publicação pelo editor chega ao gateway. Com «n», sobe sem o gateway e para o que estiver rodando. A opção 12 (assistente do `.env`) pede o token e pergunta pela publicação pelo editor.
+- **Exemplos do menu «Novo» corrigidos** para usar só o que o motor executa: na consulta de cliente, uma resposta `404` não derruba mais a instância (novo passo «Cliente encontrado?»); na análise de crédito, a análise manual não é mais pulada (a decisão `risco` não era sobrescrita pelo mapa da linha DMN); na carga de vendas, as linhas da planilha chegam ao mapeamento; nos itens do pedido, a lista `itens` entra pelo início HTTP; no pedido com aprovação, a decisão segue os botões Aprovar e Reprovar e o valor da fatura vai como número. Fluxos já criados a partir dos exemplos antigos não mudam: abra o exemplo de novo para pegar a versão corrigida.
+- **Editor, painel Propriedades:** deixa de dizer «O motor não executa este elemento» em gateway baseado em evento, eventos intermediários e de borda, regra de negócio (DMN), chamada de processo, subprocesso e tarefa de recebimento, que o motor executa. O editor também deixa de descartar o formulário da tarefa de usuário (`orkx:formField`) ao abrir um diagrama.
+- **Editor, mais espaço para o desenho:** os diálogos podem ser arrastados pelo título e minimizados para uma barra no canto; o painel lateral (no editor e na tela de execução) minimiza sem perder o que foi preenchido; a barra de ferramentas recolhe para cima e a paleta para a esquerda (as duas lembram o estado entre recargas).
+- **Imagens no Docker Hub:** `wendercorrea/orkestrix:backend-4.1.6`, `frontend-4.1.6` e `gateway-4.1.6`, com `upgrade.sh --pull` como na 4.1.3.
+
+---
+
+## Versão anterior: 4.1.5
 
 Data: 05/11/2026. **Só o front muda**, e só no que ele entrega ao navegador: o motor, o gateway e o banco são os mesmos e **não há migração nova**.
 
