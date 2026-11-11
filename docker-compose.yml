@@ -30,7 +30,7 @@ services:
 
   # O nome do serviço precisa continuar «orkestrix-backend»: o nginx do front resolve esse nome.
   orkestrix-backend:
-    image: wendercorrea/orkestrix:backend-${ORKESTRIX_VERSION:-4.1.10}
+    image: wendercorrea/orkestrix:backend-${ORKESTRIX_VERSION:-4.1.11}
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-orkestrix}
@@ -49,6 +49,7 @@ services:
       # limites e retenção (todos opcionais no .env; sem eles valem os padrões abaixo, que são os de sempre)
       ORKX_FILE_MAX_READ_SIZE: ${ORKX_FILE_MAX_READ_SIZE:-5MB}                  # maior arquivo que o conector «file» lê
       ORKX_SPREADSHEET_MAX_ROWS: ${ORKX_SPREADSHEET_MAX_ROWS:-2000000}          # linhas lidas por nó de planilha quando o nó não diz outro limite
+      ORKX_SPREADSHEET_COLLECT_MAX_ROWS: ${ORKX_SPREADSHEET_COLLECT_MAX_ROWS:-50000}   # idem, quando o nó passa as linhas pelo fluxo (collect)
       ORKX_REST_PREVIEW_MAX_SIZE: ${ORKX_REST_PREVIEW_MAX_SIZE:-1MB}            # maior resposta do «Enviar» da chamada REST no editor (até 64MB)
       ORKX_VARIABLE_INLINE_MAX_CHARS: ${ORKX_VARIABLE_INLINE_MAX_CHARS:-65536}  # acima disto o valor de uma variável vai para tabela própria (0 desliga)
       ORKX_VARIABLE_WARN_CHARS: ${ORKX_VARIABLE_WARN_CHARS:-5000000}            # o log avisa quando uma variável passa disto (0 não avisa)
@@ -68,7 +69,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: wendercorrea/orkestrix:frontend-${ORKESTRIX_VERSION:-4.1.10}
+    image: wendercorrea/orkestrix:frontend-${ORKESTRIX_VERSION:-4.1.11}
     environment:
       ORKX_MAX_BODY_SIZE: ${ORKX_MAX_BODY_SIZE:-1m}   # maior corpo de requisição aceito pela tela (publicar/importar BPMN grande); formato do nginx: 512k, 20m, 1g
     ports:
@@ -81,7 +82,7 @@ services:
   # API Gateway: porta de entrada externa para iniciar processos por HTTP, com chave de API e Swagger (em /api/v1/docs).
   # Catálogo em banco (schema orkx_gateway) e contrato interno, que é o que o «Publicar no API Gateway» do designer usa.
   orkestrix-gateway:
-    image: wendercorrea/orkestrix:gateway-${ORKESTRIX_VERSION:-4.1.10}
+    image: wendercorrea/orkestrix:gateway-${ORKESTRIX_VERSION:-4.1.11}
     environment:
       ORKX_GW_BACKEND_URL: http://orkestrix-backend:9000
       # usuário com o qual o gateway chama o Orkestrix (padrão: o admin, com a senha do .env)
