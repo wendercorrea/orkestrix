@@ -1,4 +1,40 @@
-# Orkestrix 4.1.8: notas da versão
+# Orkestrix 4.1.10: notas da versão
+
+Data: 11/11/2026. Mudam o **motor** (gravação em lotes, retenção, tarefas), o **backend** (histórico e listagens), a **imagem do backend** e o **front** (tela de tarefas, editor). **Não há migração de banco nova**: a `4.1.9_01` já cobre o esquema; o código novo lê o que a 4.1.9 gravou.
+
+- **Gravação em tabela em lotes.** O «Gravar no banco» e o conector de planilha enviam as linhas ao banco em lotes de 500, na mesma transação, e o conector reaproveita o plano entre os lotes. Em PostgreSQL, 50 mil linhas de `upsert` que atualizam tudo passaram de 33 s para 4 s. Regra GRV-36. Sem mudança de esquema.
+- **Retenção de dados antigos (desligada por padrão).** Com `ORKX_RETENTION_INSTANCES_DAYS=N`, uma limpeza agendada apaga instâncias terminadas há mais de N dias, com histórico, logs, tarefas e variáveis, em rodadas pequenas e sem apagar mãe de instância em andamento. Regra EXE-95. **Atenção:** o que sai não volta; faça backup antes de ligar. Sem mudança de esquema.
+- **Imagem do backend.** A JVM passa a usar até 75% da memória do contêiner (`-XX:MaxRAMPercentage=75`; antes usava o padrão de 25%), o `HEALTHCHECK` da imagem vira uma chamada `curl` a `/actuator/health` (antes subia outra JVM inteira a cada 30 s) e os `-D` que vinham depois de `-jar` (ignorados pela JVM) saíram; o perfil `prod` vem de `ENV SPRING_PROFILES_ACTIVE=prod`, que o compose ou `-e` ainda trocam. **Atenção:** com `mem_limit` baixo a JVM agora enxerga o teto do contêiner e o heap cresce até 75% dele.
+- **Tela de tarefas de usuário (`/tarefas`).** Antes só pela API: agora a lista (minhas, do meu grupo, todas para o ADMIN) com filtro de status e paginação, e o detalhe com o formulário e as ações Reivindicar, Devolver, Concluir, Aprovar e Reprovar, conforme o que o backend permite. Regra TAR-26; risca a LAC-34.
+- **Correção na lista de execuções.** A paginação da 4.1.9 escondia a última linha de cada página (pedia «tamanho + 1» e o servidor desloca pelo tamanho). Agora cada página mostra todas as linhas; «Próxima» fica ativa com página cheia.
+- **Editor: responsável e formulário da tarefa de usuário.** O painel de propriedades da «Tarefa de usuário» ganhou responsável, usuários e grupos candidatos, prazo, prioridade e o formulário (campos com nome, rótulo, tipo e obrigatório). Antes isso só entrava por XML. Regra TAR-27.
+- **Editor: timer e erro.** Dois componentes novos, «Esperar (timer)» e «Tratar erro (borda)»; arrastados para a borda de uma atividade viram prazo (timer de borda) e caminho de erro. O painel configura o tipo e o valor do timer (com validação do formato ISO 8601), «Interromper a atividade» e o código do erro. O motor já executava esses eventos (EXE-50 a EXE-55); faltava o editor. Regra EXE-96.
+- **Histórico e logs de uma instância com variáveis grandes não travam mais.** As entidades de histórico, logs e tarefas tinham uma relação «lazy» com `ProcessInstance` por `instance_id` (que não é a chave primária), e o Hibernate não cria proxy assim: carregava a instância inteira, com as variáveis, a cada linha lida (medido: 18,7 s para o histórico de uma instância de 58 MB, consultado a cada 3 s pela tela). As relações (e as coleções inversas `tasks` e `executionHistories`, que ninguém usava) saíram; as chaves estrangeiras continuam no banco. Sem mudança de esquema.
+- **Editor: botão «Organizar».** Refaz o layout visual do desenho inteiro (posições e traçado dos fluxos) e desfaz sobreposições, usando o `bpmn-auto-layout` que já arrumava os importados. O processo não muda: elementos, ligações e configuração dos nós ficam iguais, e as anotações continuam ao lado do passo a que estão ligadas. «Layout anterior» volta ao desenho de antes e some na primeira edição.
+- **Prévia das variáveis de instância terminada.** O resumo é calculado uma vez e reaproveitado (várias requisições juntas liam dezenas de MB ao mesmo tempo). Instâncias antigas e enormes ainda levam cerca de 10 s na primeira leitura a frio (LAC-37).
+- **Sem outra mudança para quem instala.** As imagens do Docker Hub (`wendercorrea/orkestrix:backend-4.1.10`, `frontend-` e `gateway-`) e o `upgrade.sh --pull` seguem o mesmo caminho; o `docker-compose.yml` ganha só variáveis opcionais novas (`ORKX_RETENTION_INSTANCES_DAYS`, `ORKX_FILE_MAX_READ_SIZE`, `ORKX_SPREADSHEET_MAX_ROWS`, `ORKX_REST_PREVIEW_MAX_SIZE`, `ORKX_MAX_BODY_SIZE`, `ORKX_VARIABLE_*`); sem elas valem os padrões de sempre.
+
+---
+
+## Versão anterior: 4.1.9
+
+Data: 11/11/2026. Mudam o **motor** (variáveis grandes e «Gravar no banco»), o **backend** (listagem de execuções, consulta SQL, limites) e o **front**. O banco ganha **uma tabela nova** (`process_variable_blob`, migração `4.1.9_01`): só acrescenta, a 4.1.8 a ignora.
+
+- **Execuções não travam mais.** Uma instância que carrega uma planilha ou um JSON grande chegava a dezenas de MB em `process_instance.variables_json`, regravados a cada nó e relidos a cada consulta (backend a 250% de CPU). Agora o valor de variável acima de 64 KB vai para `process_variable_blob` e a instância guarda só a referência com o hash; o valor só é regravado quando muda. O motor, a retomada após reinício e o gateway continuam recebendo o valor inteiro. Instâncias antigas seguem legíveis como estão. Limites: `ORKX_VARIABLE_INLINE_MAX_CHARS` (padrão 65536; `0` desliga) e `ORKX_VARIABLE_WARN_CHARS` (o log avisa a partir de 5 MB).
+- **Listagem de execuções (`/execucoes`).** O backend lê só o resumo (sem `variables_json`) e trata «em execução» (`RUNNING` + o legado `ACTIVE`) numa consulta paginada só. A tela deixou de buscar o detalhe de cada linha, ganhou 20/50/100 por página e «Próxima» exata. Os logs da execução renderizam 50 por vez.
+- **Detalhe da execução e painel «Teste».** O acompanhamento pede só o estado; as variáveis vêm à parte, com valor grande resumido (`{"$truncated": true, "size", "preview"}`) e o botão «Carregar valor inteiro». Rotas: `GET /api/processes/instances/{id}/variables?preview=true` e `GET .../variables/{nome}`. Sem `preview`, a rota devolve tudo, como antes.
+- **«Gravar no banco»: limpar a tabela antes (`dbClear`).** Apaga todas as linhas na mesma transação da gravação (se a gravação falhar, as linhas antigas voltam) e grava `<id>_deleted`. Regra GRV-05.
+- **Consulta SQL melhor.** Editor com autocompletar (tabelas, colunas, variáveis, funções), `Ctrl+Enter`, «SELECT *» por tabela e tempo de execução. O erro aponta o trecho do SQL e sugere a correção (`FORM` → «Você quis dizer FROM?»). A tela «Dados» ganhou a consulta SQL (`POST /api/designer/data/query/run`, `PROCESS_READ`; o «Máximo de linhas» sugere 500 e aceita até 10.000) e paginação das linhas.
+- **Limites configuráveis.** `ORKX_MAX_BODY_SIZE` (nginx, padrão `1m`), `ORKX_FILE_MAX_READ_SIZE` (conector «file», `5MB`), `ORKX_SPREADSHEET_MAX_ROWS` (`2000000`) e `ORKX_REST_PREVIEW_MAX_SIZE` (`1MB`, até 64MB). Sem a variável vale o valor de sempre.
+- **«Mapear e transformar»: nova transformação «Truncar texto» (`truncate`).** Corta o texto no tamanho escolhido, de 1 até 4000 (o que cabe numa coluna `text`; o campo mostra o máximo). O «final» opcional (ex.: `…`) entra na conta. Texto menor não muda e o corte respeita emoji e acentos. Regra no quadro de funções de `specs/08`.
+- **Editor:** os botões do painel lateral viraram um só (ocultar no próprio painel; o do canto só reabre).
+- **Atenção:** o `nginx.conf` do front agora é um **modelo** (`/etc/nginx/templates/default.conf.template`, troca `${ORKX_MAX_BODY_SIZE}` ao subir). Quem monta esse arquivo direto em `conf.d` precisa montá-lo em `templates/`. O `ORKX_MAX_BODY_SIZE` entra no serviço do front do compose.
+- **Atenção:** tela e API passam a ver valor grande de variável só resumido; quem precisa do valor inteiro usa `GET .../variables/{nome}` (ou a rota sem `preview`).
+- **Sem outra mudança para quem instala.** As imagens do Docker Hub (`wendercorrea/orkestrix:backend-4.1.9`, `frontend-` e `gateway-`) e o `upgrade.sh --pull` seguem o mesmo caminho; rode `scripts/migrate.sh` (o `upgrade.sh` já faz).
+
+---
+
+## Versão anterior: 4.1.8
 
 Data: 06/11/2026. Completa o «Montar JSON» da 4.1.7. Mudam o **motor** (um recurso no modelo do JSON) e o **front**. O banco é o mesmo da 4.1.7: **não há migração nova**, e a 4.1.7 não chegou a ser publicada, então quem vem da 4.1.6 recebe tudo junto.
 
@@ -11,7 +47,8 @@ Data: 06/11/2026. Completa o «Montar JSON» da 4.1.7. Mudam o **motor** (um rec
 - **Sem mudança para quem instala.** As imagens do Docker Hub (`wendercorrea/orkestrix:backend-4.1.8`, `frontend-` e `gateway-`) e o `upgrade.sh --pull` seguem como na 4.1.3.
 
 ---
-# Orkestrix 4.1.7: notas da versão
+
+## Versão anterior: 4.1.7
 
 Data: 06/11/2026. Mudam o **motor** (um componente novo), o **backend** (só o editor: uma rota de prévia) e o **front**. O banco é o mesmo da 4.1.6: **não há migração nova**. Quem não usa o componente novo só vê as mudanças da paleta do editor.
 
@@ -25,7 +62,7 @@ Data: 06/11/2026. Mudam o **motor** (um componente novo), o **backend** (só o e
 
 ---
 
-# Orkestrix 4.1.6: notas da versão
+## Versão anterior: 4.1.6
 
 Data: 05/11/2026. Mudam o **gateway**, o **backend** (só a publicação pelo editor), o **front** e o **menu do servidor**. O banco é o mesmo da 4.1.5: **não há migração nova**. Quem não usa o API Gateway só vê as mudanças do editor.
 
