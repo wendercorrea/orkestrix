@@ -1,4 +1,72 @@
-# Orkestrix 4.1.17: notas da versão
+# Orkestrix 4.1.22: notas da versão
+
+Data: 13/11/2026. Mudam a **tela Processos** (grupos), o **layout** (responsivo em todas as telas) e o **editor** (paleta, linha de comando e teste). **Há uma migração de banco nova**: `4.1.22_01` (coluna do grupo do processo). Só acrescenta; a versão anterior ignora a coluna.
+
+- **Grupos de processos.** Na tela Processos, **Novo grupo** (ou o botão do processo) reúne vários processos sob um nome, por exemplo `whats` com todos os `whats_*`. A lista mostra uma seção por grupo, que recolhe e abre. O grupo não muda o tipo nem a pasta da biblioteca.
+- **Responsivo.** O menu vira gaveta no celular; botões e campos ficam maiores para toque; os diálogos ocupam a tela inteira em tela pequena e podem ser **redimensionados arrastando** o canto em tela grande. Tabelas escondem colunas secundárias e rolam dentro do cartão.
+- **Ações das linhas.** Em telas médias, a linha mostra **Iniciar** e um menu «⋯» (editar, execuções, grupo, arquivar); a partir de 1280 px os botões completos voltam. Vale para Processos (linhas e versões), Cofre e Dados.
+- **Editor.** A **paleta** e a **linha de comando** podem ser recolhidas (no celular nascem recolhidas; a escolha fica salva). O painel lateral reduzido vira uma barra pequena. O painel **Teste** liga à tela Execuções (a execução aberta e a lista de testes do processo).
+- **Biblioteca.** «Nova pasta» permite cadastrar um tipo de processo novo (só ADMIN) sem sair do diálogo; em tela estreita o painel de pastas fica atrás do botão «Pastas e ações».
+- **Atenção:** a lista de Processos agrupa os processos que tiverem grupo; os sem grupo aparecem em «Sem grupo». Nenhum dado existente muda.
+- Imagens no Docker Hub: `wendercorrea/orkestrix:backend-4.1.22`, `frontend-4.1.22` e `gateway-4.1.22`, com `upgrade.sh --pull` como na 4.1.3.
+
+---
+
+## Versão anterior: 4.1.21: notas da versão
+
+Data: 13/11/2026. Mudam as **execuções** (número da execução separado da revisão) e a **ofuscação no log** (campos escolhidos em consulta, chamada REST e transformação). **Não há migração de banco nova.**
+
+- **Número da execução.** A lista de Execuções mostra a coluna **Execução** (#1, #2…): a posição da instância entre as do mesmo processo. Fica separada da **Revisão** (vN, a versão do processo) e do identificador da instância.
+- **Ofuscar campos no log.** Em «Consultar banco», chamada REST (POST, GET, PUT, PATCH, DELETE) e «Mapear e transformar», escreva os nomes de campo a ocultar (`cpf, email`). Eles saem como `***` no log de execução, em qualquer nível do JSON (entrada e saída do nó, corpo e resposta da chamada, linhas da consulta).
+- **Atenção:** campos com nome de segredo (`token`, `senha`, `api_key`, `authorization`) continuam ocultados sempre. Um valor que aparece no caminho da URL (ex.: `/clientes/{cpf}`) não é ocultado pelo nome do campo.
+- Imagens no Docker Hub: `wendercorrea/orkestrix:backend-4.1.21`, `frontend-4.1.21` e `gateway-4.1.21`, com `upgrade.sh --pull` como na 4.1.3.
+
+---
+
+## Versão anterior: 4.1.20: notas da versão
+
+Data: 13/11/2026. Mudam a **biblioteca** (tipos de processo cadastrados), a **tela Dados** (categoria, visibilidade e filtros), os **logs** (mascaramento da consulta e da chamada REST), o **editor** (subprocesso no gerador de BPMN) e a **tela de Execuções** (link a partir de Processos). **Há migrações de banco novas**: `4.1.20_01` (tipos de processo) e `4.1.20_02` (categoria e visibilidade das tabelas). Só acrescentam; a versão anterior ignora as tabelas novas.
+
+- **Tipos de processo cadastrados.** Os tipos deixam de ser fixos no código. Só o perfil **ADMIN** cadastra, renomeia e apaga um tipo; apagar exige tipo sem pastas nem processos (409). Os três tipos atuais continuam com os mesmos códigos.
+- **Tabelas de dados: categoria e visibilidade.** No nó «Gravar no banco», escolha a categoria e os perfis que veem a tabela. Vale quando a tabela é **criada**. A tela Dados filtra por nome, categoria e linhas, e só mostra as tabelas que o perfil vê (o ADMIN vê todas). A consulta da tela Dados também respeita a visibilidade.
+- **Mascarar no log.** Nova opção **Mascarar no log** no «Consultar banco» (esconde resultado e erros) e na chamada REST (esconde URL, cabeçalhos, corpo, resposta e erro, mostrando `***`). Não altera o que o fluxo usa.
+- **Execuções a partir de Processos.** Cada processo, e cada versão, tem um botão «Execuções» que abre a lista já filtrada. A lista de Execuções abre na janela dos últimos 20 minutos.
+- **Gerador de BPMN (skill).** Suporta subprocesso embutido e as opções novas acima; o validador exige Java 21 em `JAVA_HOME`.
+- **Atenção:** tabelas criadas antes da 4.1.20 ficam sem categoria e visíveis a todos os perfis, como antes. Os processos continuam com o tipo que tinham.
+- Imagens no Docker Hub: `wendercorrea/orkestrix:backend-4.1.20`, `frontend-4.1.20` e `gateway-4.1.20`, com `upgrade.sh --pull` como na 4.1.3.
+
+---
+
+## Versão anterior: 4.1.19: notas da versão
+
+Data: 13/11/2026. Mudam a **segurança** (sessão, logs), o **editor de dados** (origem dos dados e exportação CSV) e a **tela de dados**. **Não há migração de banco nova.**
+
+- **Segredos fora do log.** O log de cada nó nunca guarda segredo: variável cujo nome sugere segredo (`token`, `senha`, `api_key`, `authorization`, `secret`…) sai como `***`, em qualquer nível do JSON. O token usado numa chamada REST, inclusive o buscado de outro nó, é apagado do corpo enviado, do recebido e da URL (EXE-99).
+- **Mascarar no log.** Nova função de transformação «Mascarar no log» (`log_mask`, grupo Segurança): não muda o valor, só esconde no log de execução o campo indicado (TRF-35).
+- **Sessão encerra após 2 h sem uso.** O frontend encerra a sessão depois de 2 h sem mouse, teclado, toque ou rolagem; o último uso vale para todas as abas, e a tela de login explica o motivo (SEG-26). O JWT continua válido por 24 h: é um controle do navegador.
+- **Dados de origem no editor.** O editor de transformação e de consulta mostra as variáveis de origem do processo (o que chega antes de qualquer tarefa): as entradas do início HTTP, o último teste, o JSON da aba Teste ou um JSON de exemplo colado.
+- **Exportar CSV.** Exportação de tabelas da tela de dados e do editor, com escape de aspas e separadores (`csv`, `exportCsv`).
+- **Atenção:** a sessão do navegador passa a encerrar após 2 h sem uso; quem deixa a tela aberta e volta depois precisa entrar de novo.
+- **Atenção:** o mascaramento é por nome do campo: um segredo num campo de nome comum (`valor`, `dado`) não é detectado. Use «Mascarar no log» nesses casos.
+- Imagens no Docker Hub: `wendercorrea/orkestrix:backend-4.1.19`, `frontend-4.1.19` e `gateway-4.1.19`, com `upgrade.sh --pull` como na 4.1.3.
+
+---
+
+## Versão anterior: 4.1.18
+
+Data: 13/11/2026. Mudam o **editor**, a **tela de Processos e de Execuções** e o **motor** (log de auditoria das chamadas REST). **Não há migração de banco nova.**
+
+- **Editor.** Depois de publicar um diagrama novo, aparece **Salvar** (sobrescreve a versão, sem gerar revisão) e o botão principal vira **Implantar fluxo** (gera a revisão). O ícone de «Conectar elementos» passa a ser a seta.
+- **Processos.** A lista padrão mostra só os implantados; as cópias de teste (`__teste`) ficam no filtro «Testes». Novo filtro «Todos os usos» (Normais, Chamadores, Subprocessos) com selos e links «chama / chamado por» que abrem a lista de processos relacionados (`kind`, `calls` e `calledBy` no catálogo).
+- **Execuções.** Coluna «Revisão» e filtros por status, origem, chave, revisão e período (data e hora), aplicados no botão **Filtrar**. A listagem aceita esses filtros no backend (EXE-97).
+- **Logs da execução.** Filtro por fase e busca; clicar num log abre um modal com o que o nó fez (variáveis criadas e alteradas, duração, status e tentativas) e a **chamada HTTP** completa.
+- **Auditoria das chamadas REST.** Cada nó grava sempre entrada e saída; a tarefa REST grava sempre método, URL, headers, corpo enviado e recebido, status e duração, com **tokens, chaves e senhas mascarados** (EXE-98). As variáveis de cada nó continuam dependendo da captura de logs.
+- **Atenção:** o log de auditoria passa a gravar mais linhas por execução (entrada e saída de todo nó, mesmo com a captura desligada, e uma linha `HTTP` por chamada REST); o mascaramento é por nome do campo, então um segredo num campo de nome comum não é detectado. Execuções anteriores a esta versão não têm a chamada HTTP no log.
+- **Imagens** `wendercorrea/orkestrix:backend-4.1.18`, `frontend-` e `gateway-`; `upgrade.sh --pull` segue o mesmo caminho.
+
+---
+
+## Versão anterior: 4.1.17: notas da versão
 
 Data: 12/11/2026. Mudam o **editor** e o **motor** (nó «Consultar banco»). **Não há migração de banco nova.**
 
