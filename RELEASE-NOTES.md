@@ -1,4 +1,85 @@
-# Orkestrix 4.1.10: notas da versão
+# Orkestrix 4.1.17: notas da versão
+
+Data: 12/11/2026. Mudam o **editor** e o **motor** (nó «Consultar banco»). **Não há migração de banco nova.**
+
+- **Consultar banco com variáveis de saída.** Cada campo do resultado vira uma variável própria (`[0].cnpj` → `cnpj`), para os próximos nós usarem `${cnpj}` em vez de `${registros[0].cnpj}`. O editor mostra o valor do último teste e tem atalhos «+ coluna». Texto, número e booleano ficam nativos (dá para comparar em condições); caminho sem linha não grava a variável e não falha o nó. **Atenção:** a variável de linhas (`registros`) continua igual.
+- **Corpo da requisição REST.** Painel «Dados disponíveis» ao lado do corpo, com «Buscar amostra» e inserção da variável no cursor.
+- **Subprocesso, chamada de processo e repetição por item** no editor (validados contra o motor; ver `docs/testes/` e a 4.1.16).
+- **Imagens** `wendercorrea/orkestrix:backend-4.1.17`, `frontend-` e `gateway-`; `upgrade.sh --pull` segue o mesmo caminho.
+
+---
+
+## Versão anterior: 4.1.16: notas da versão
+
+Data: 12/11/2026. Muda só o **editor**: subprocesso, chamada de processo e repetição por item. **Não há migração de banco nova e o motor não muda** (ele já executava esses elementos; faltava desenhá-los e validá-los no editor).
+
+- **Subprocesso no editor.** Novo componente «Subprocesso» (também na busca «Componente»): nasce expandido, com um início e um fim ligados dentro dele, num único passo do desfazer. O painel explica que o corpo roda como instância-filha e escolhe quais variáveis entram e saem (`*`, lista ou `destino=origem`).
+- **Chamar processo.** Novo componente «Chamar processo»: escolha do processo publicado (lista do catálogo, com aviso se não estiver publicado), versão opcional e variáveis que entram e saem.
+- **Repetir por item.** Tarefas, subprocesso e chamada de processo podem repetir por item de uma lista ou um número de vezes, em paralelo ou em sequência, guardando as saídas numa variável.
+- **Validação no editor.** Subprocesso sem início ou sem fim dentro dele, chamada sem processo, versão que não é número inteiro, variáveis mal escritas e repetição sem lista nem número passam a ser **erros** antes de publicar. O corpo do subprocesso também é conferido (elemento que o motor não executa, passo sem entrada).
+- **Atenção:** um subprocesso sem início e fim dentro dele, que antes passava no editor, passa a ser recusado; o motor já o recusava (PRF-26).
+- **Lacunas conhecidas do reuso**, registradas em `specs/12-lacunas.md` (LAC-38 a LAC-40): o deploy não confere se o processo chamado existe; nada barra chamada circular; a tela de execuções não liga mãe e filha.
+- Imagens `wendercorrea/orkestrix:backend-4.1.16`, `frontend-` e `gateway-`; `upgrade.sh --pull` segue o mesmo caminho.
+
+---
+
+## Versão anterior: 4.1.15
+
+Data: 12/11/2026. Muda o **editor**, a **tela de execuções e de tarefas**, o **motor** (log de nós em espera e atualização da versão ativa) e a **consulta ao banco** (SQL). **Não há migração de banco nova.**
+
+- **Consultar banco mais seguro e mais prático.** O SELECT recusa texto fora de aspas simples (`$$texto$$`, `$1`, barra invertida antes de aspa), porque o PostgreSQL os lê de outro jeito. O parâmetro `${variavel}` vai sem tipo no PostgreSQL, e um número que não combina com a coluna (um CNPJ numérico contra coluna de texto) é tentado de novo sem tipo. Datas no padrão SQL (`CURRENT_TIMESTAMP`, `CURRENT_DATE`, `INTERVAL '7' DAY`); `SYSDATE`, `GETDATE()` e parentes são recusados com a troca sugerida. No editor, uma barra insere comparações e datas e «Formatar» organiza o SQL. **Atenção:** consultas que usavam `SYSDATE`, `GETDATE()` ou `$$…$$` passam a ser recusadas.
+- **Nó em espera aparece como espera.** Um nó que suspende (tarefa de usuário, timer, mensagem) grava `NODE_WAITING` e a fase `WAITING` no log, em vez de parecer concluído. A tela da execução mostra «em espera» e, para tarefa de usuário, de quem o fluxo espera (`GET /api/tasks?instanceId=`, de qualquer responsável).
+- **Atualizar a versão atual.** Novo botão «Atualizar» no editor de um processo publicado, que troca o XML da versão ativa sem criar versão nova (`PUT /api/processes/deploy`), com as mesmas validações da publicação.
+- **Tarefa de usuário.** O prazo (`dueIn`) é editado por número e unidade; o motor lê só dias, horas, minutos e segundos (`P2D`, `PT4H`, `P1DT12H`), e o editor avisa o que o motor ignora (`P1W`, meses, anos). Nova janela da tarefa e lista das tarefas em espera.
+- **Do 4.1.14 sem mudança:** erro do «Mapear e transformar» com linha e coluna e a validação por amostra maior ou aleatória já estavam na versão anterior.
+- Imagens `wendercorrea/orkestrix:backend-4.1.15`, `frontend-` e `gateway-`; `upgrade.sh --pull` segue o mesmo caminho.
+
+---
+
+## Versão anterior: 4.1.14
+
+Data: 11/11/2026. Muda o **editor** («Mapear e transformar»), a **API de prévia** do editor (`/api/designer`) e o **motor** só nas mensagens de erro. **Não há migração de banco nova.**
+
+- **Erro do «Mapear e transformar» com o campo e como ajustar.** Cada linha rejeitada mostra «Linha 44 · coluna retorno: «0.1» não é um número inteiro.», quantas outras linhas têm o mesmo problema, os valores de exemplo e uma frase de **como ajustar** (inteiro recebendo decimal, vírgula decimal, valor vazio, texto que não é número, booleano, data fora do formato ISO). Quando um tipo resolve (por exemplo Inteiro → Número), o botão «Trocar o tipo» faz a troca; «Ver o campo» leva à linha do mapeamento, que fica destacada. Na execução, a mensagem do nó cita o campo, a origem e «Como ajustar: …». A resposta da prévia ganha `issues` (erros por campo, contando todas as linhas) e, em cada erro, `source`, `type`, `value`, `hint` e `suggestType`.
+- **Validar com mais dados.** «Validar com» escolhe 50, 500 ou 5.000 primeiras linhas, ou 500, 2.000 ou 5.000 aleatórias da planilha anterior. A aleatória lê o arquivo inteiro numa passada (sem guardá-lo na memória) e mostra «Amostra aleatória de N linhas, de T do arquivo», com o número da linha da planilha no erro. A prévia da planilha (`POST /api/designer/spreadsheet/preview`) aceita `rows` até 5.000 (era 200) e `mode` `first` ou `random`, e devolve `rowNumbers` e `totalRows`.
+- **Spec de limites** (`specs/20-limites.md`) e specs 08 (TRF-33, TRF-34) e 15 (CON-23a).
+- **Sem outra mudança para quem instala.** Imagens `wendercorrea/orkestrix:backend-4.1.14`, `frontend-` e `gateway-`; `upgrade.sh --pull` segue o mesmo caminho.
+
+---
+
+## Versão anterior: 4.1.13
+
+Data: 11/11/2026. Muda o **motor** («Mapear e transformar») e o **`application.yml`** do backend. **Não há migração de banco nova.**
+
+- **«Mapear e transformar»: o limite de linhas por etapa é configurável e subiu de 10.000 para 500.000.** Uma planilha de 163.302 linhas lida pelo «Ler planilha» parava aqui com «O limite por etapa é 10000». Nova variável `ORKX_TRANSFORM_MAX_ROWS` (padrão 500000); o `maxRows` do próprio nó vence. Valor inválido (menor que 1) impede a subida, como nos outros limites. A mensagem de erro cita as duas formas de aumentar.
+- **Correção no `application.yml`:** na 4.1.12 o padrão do limite do collect da planilha ficou `:-500000`, que o Spring lê como `-500000`. Rodando pelo compose nada mudava (ele sempre repassa um valor válido), mas fora dele (IntelliJ, `spring-boot:run`) o backend não subia. Agora é `:500000`.
+- **Compose, `.env.example`, README do pacote e spec 08 (TRF-24)** trazem `ORKX_TRANSFORM_MAX_ROWS`.
+- **Sem outra mudança para quem instala.** Imagens `wendercorrea/orkestrix:backend-4.1.13`, `frontend-` e `gateway-`; `upgrade.sh --pull` segue o mesmo caminho.
+
+---
+
+## Versão anterior: 4.1.12
+
+Data: 11/11/2026. Muda o **conector de planilha** (limite padrão e mensagem de erro) e os textos do editor. **Não há migração de banco nova.**
+
+- **Planilha com «collect»: o limite padrão subiu de 50.000 para 500.000 linhas.** Na 4.1.11 a variável `ORKX_SPREADSHEET_COLLECT_MAX_ROWS` existia, mas o padrão continuava 50.000 e uma planilha de 163.303 linhas ainda parava sem configurar nada. Agora ela passa de fábrica; continua valendo a variável, e o `maxRows` do nó vence. As linhas ficam numa variável do processo (armazenada à parte quando grande), então planilhas muito maiores pedem «Gravar direto na tabela».
+- **A mensagem de erro diz como resolver:** cita `maxRows` no nó, `ORKX_SPREADSHEET_COLLECT_MAX_ROWS` no servidor ou gravar direto na tabela.
+- **Editor, README e spec 15** passam a falar em 500.000.
+- **Sem outra mudança para quem instala.** Imagens `wendercorrea/orkestrix:backend-4.1.12`, `frontend-` e `gateway-`; `upgrade.sh --pull` segue o mesmo caminho.
+
+---
+
+## Versão anterior: 4.1.11
+
+Data: 11/11/2026. Muda o **conector de planilha** (limite de linhas) e o **compose** (variáveis). **Não há migração de banco nova.**
+
+- **Planilha com «collect»: o limite de linhas é configurável.** No modo «passar as linhas pelo fluxo» o limite era fixo em 50.000 linhas e `ORKX_SPREADSHEET_MAX_ROWS` só valia para o modo «gravar direto na tabela»: uma planilha de 163.303 linhas parava com «O arquivo passa de 50000 linhas». Nova variável `ORKX_SPREADSHEET_COLLECT_MAX_ROWS` (padrão 50000); o `maxRows` do próprio nó continua vencendo os dois. Para planilhas grandes, prefira gravar direto na tabela (sem esse teto e bem mais leve na memória).
+- **`docker-compose.yml` do pacote repassa as duas variáveis de variáveis grandes** (`ORKX_VARIABLE_INLINE_MAX_CHARS` e `ORKX_VARIABLE_WARN_CHARS`), que a 4.1.10 aceitava no backend mas o compose não passava ao contêiner.
+- **Sem outra mudança para quem instala.** As imagens do Docker Hub (`wendercorrea/orkestrix:backend-4.1.11`, `frontend-` e `gateway-`) e o `upgrade.sh --pull` seguem o mesmo caminho.
+
+---
+
+## Versão anterior: 4.1.10
 
 Data: 11/11/2026. Mudam o **motor** (gravação em lotes, retenção, tarefas), o **backend** (histórico e listagens), a **imagem do backend** e o **front** (tela de tarefas, editor). **Não há migração de banco nova**: a `4.1.9_01` já cobre o esquema; o código novo lê o que a 4.1.9 gravou.
 
